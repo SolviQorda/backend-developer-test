@@ -22,16 +22,19 @@ data FileForm = FileForm
 -- The majority of the code you will write in Yesod lives in these handler
 -- functions. You can spread them across multiple files if you are so
 -- inclined, or create a single monolithic file.
-getHomeR :: Handler Html
+getHomeR :: Handler Value
 getHomeR = do
-    defaultLayout $ do
-        aDomId <- newIdent
-        setTitle "Welcome To Yesod!"
-        $(widgetFile "homepage")
+    return placeholderValue
+        -- aDomId <- newIdent
+        -- setTitle "Welcome To Braet!"
 
-postHomeR :: Handler Html
+postHomeR :: Handler Value
 postHomeR = do
-    defaultLayout $ do
-        aDomId <- newIdent
-        setTitle "Welcome To Yesod!"
-        $(widgetFile "homepage")
+  return placeholderValue
+        -- aDomId <- newIdent
+        -- setTitle "Welcome To Braet!"
+        -- $(widgetFile "homepage")
+
+placeholderValue :: Value
+placeholderValue = object
+  [ ("braet" .= ("spil" :: String))]
