@@ -10,3 +10,4 @@
 / HomeR GET POST
 
 /profile ProfileR GET
+/!#UserId/+UserProfile RegisterProfileR POST

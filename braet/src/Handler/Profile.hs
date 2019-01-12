@@ -7,9 +7,14 @@ module Handler.Profile where
 
 import Import
 
-getProfileR :: Handler Html
+getProfileR :: Handler Value
 getProfileR = do
-    (_, user) <- requireAuthPair
-    defaultLayout $ do
-        setTitle . toHtml $ userIdent user <> "'s User page"
-        $(widgetFile "profile")
+  (_, user) <- requireAuthPair
+  return $ toJSON user
+
+-- User -> Value
+
+instance ToJSON User where
+  toJSON (User email) =
+    object
+      [ "Email" .= email ]

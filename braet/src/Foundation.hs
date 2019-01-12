@@ -21,6 +21,7 @@ import Control.Monad.Logger (LogSource)
 import Yesod.Auth.Dummy
 
 import Yesod.Auth.OpenId    (authOpenId, IdentifierType (Claimed))
+import Yesod.Auth.GoogleEmail2
 import Yesod.Default.Util   (addStaticContentExternal)
 import Yesod.Core.Types     (Logger)
 import qualified Yesod.Core.Unsafe as Unsafe
@@ -98,63 +99,63 @@ instance Yesod App where
     yesodMiddleware :: ToTypedContent res => Handler res -> Handler res
     yesodMiddleware = defaultYesodMiddleware
 
-    defaultLayout :: Widget -> Handler Html
-    defaultLayout widget = do
-        master <- getYesod
-        mmsg <- getMessage
-
-        muser <- maybeAuthPair
-        mcurrentRoute <- getCurrentRoute
-
-        -- Get the breadcrumbs, as defined in the YesodBreadcrumbs instance.
-        (title, parents) <- breadcrumbs
-
-        -- Define the menu items of the header.
-        let menuItems =
-                [ NavbarLeft $ MenuItem
-                    { menuItemLabel = "Home"
-                    , menuItemRoute = HomeR
-                    , menuItemAccessCallback = True
-                    }
-                , NavbarLeft $ MenuItem
-                    { menuItemLabel = "Profile"
-                    , menuItemRoute = ProfileR
-                    , menuItemAccessCallback = isJust muser
-                    }
-                , NavbarRight $ MenuItem
-                    { menuItemLabel = "Login"
-                    , menuItemRoute = AuthR LoginR
-                    , menuItemAccessCallback = isNothing muser
-                    }
-                , NavbarRight $ MenuItem
-                    { menuItemLabel = "Logout"
-                    , menuItemRoute = AuthR LogoutR
-                    , menuItemAccessCallback = isJust muser
-                    }
-                ]
-
-        let navbarLeftMenuItems = [x | NavbarLeft x <- menuItems]
-        let navbarRightMenuItems = [x | NavbarRight x <- menuItems]
-
-        let navbarLeftFilteredMenuItems = [x | x <- navbarLeftMenuItems, menuItemAccessCallback x]
-        let navbarRightFilteredMenuItems = [x | x <- navbarRightMenuItems, menuItemAccessCallback x]
-
-        -- We break up the default layout into two components:
-        -- default-layout is the contents of the body tag, and
-        -- default-layout-wrapper is the entire page. Since the final
-        -- value passed to hamletToRepHtml cannot be a widget, this allows
-        -- you to use normal widget features in default-layout.
-
-        pc <- widgetToPageContent $ do
-            addStylesheet $ StaticR css_bootstrap_css
-            $(widgetFile "default-layout")
-        withUrlRenderer $(hamletFile "templates/default-layout-wrapper.hamlet")
+    -- defaultLayout :: Widget -> Handler Html
+    -- defaultLayout widget = do
+    --     master <- getYesod
+    --     mmsg <- getMessage
+    --
+    --     muser <- maybeAuthPair
+    --     mcurrentRoute <- getCurrentRoute
+    --
+    --     -- Get the breadcrumbs, as defined in the YesodBreadcrumbs instance.
+    --     (title, parents) <- breadcrumbs
+    --
+    --     -- Define the menu items of the header.
+    --     let menuItems =
+    --             [ NavbarLeft $ MenuItem
+    --                 { menuItemLabel = "Home"
+    --                 , menuItemRoute = HomeR
+    --                 , menuItemAccessCallback = True
+    --                 }
+    --             , NavbarLeft $ MenuItem
+    --                 { menuItemLabel = "Profile"
+    --                 , menuItemRoute = ProfileR
+    --                 , menuItemAccessCallback = isJust muser
+    --                 }
+    --             , NavbarRight $ MenuItem
+    --                 { menuItemLabel = "Login"
+    --                 , menuItemRoute = AuthR LoginR
+    --                 , menuItemAccessCallback = isNothing muser
+    --                 }
+    --             , NavbarRight $ MenuItem
+    --                 { menuItemLabel = "Logout"
+    --                 , menuItemRoute = AuthR LogoutR
+    --                 , menuItemAccessCallback = isJust muser
+    --                 }
+    --             ]
+    --
+    --     let navbarLeftMenuItems = [x | NavbarLeft x <- menuItems]
+    --     let navbarRightMenuItems = [x | NavbarRight x <- menuItems]
+    --
+    --     let navbarLeftFilteredMenuItems = [x | x <- navbarLeftMenuItems, menuItemAccessCallback x]
+    --     let navbarRightFilteredMenuItems = [x | x <- navbarRightMenuItems, menuItemAccessCallback x]
+    --
+    --     -- We break up the default layout into two components:
+    --     -- default-layout is the contents of the body tag, and
+    --     -- default-layout-wrapper is the entire page. Since the final
+    --     -- value passed to hamletToRepHtml cannot be a widget, this allows
+    --     -- you to use normal widget features in default-layout.
+    --
+    --     pc <- widgetToPageContent $ do
+    --         addStylesheet $ StaticR css_bootstrap_css
+    --         $(widgetFile "default-layout")
+    --     withUrlRenderer $(hamletFile "templates/default-layout-wrapper.hamlet")
 
     -- The page to be redirected to when authentication is required.
     authRoute
         :: App
         -> Maybe (Route App)
-    authRoute _ = Just $ AuthR LoginR
+    authRoute _ = Just $ AuthR forwardUrl
 
     isAuthorized
         :: Route App  -- ^ The route the user is visiting.
@@ -170,6 +171,7 @@ instance Yesod App where
     -- the profile route requires that the user is authenticated, so we
     -- delegate to that function
     isAuthorized ProfileR _ = isAuthenticated
+    isAuthorized (RegisterProfileR _ _) _ = return Authorized
 
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
@@ -217,7 +219,7 @@ instance YesodBreadcrumbs App where
         -> Handler (Text, Maybe (Route App))
     breadcrumb HomeR = return ("Home", Nothing)
     breadcrumb (AuthR _) = return ("Login", Just HomeR)
-    breadcrumb ProfileR = return ("Profile", Just HomeR)
+    -- breadcrumb ProfileR = return ("Profile", Just HomeR)
     breadcrumb  _ = return ("home", Nothing)
 
 -- How to run database actions.
@@ -237,7 +239,7 @@ instance YesodAuth App where
 
     -- Where to send a user after successful login
     loginDest :: App -> Route App
-    loginDest _ = HomeR
+    loginDest _ = ProfileR
     -- Where to send a user after logout
     logoutDest :: App -> Route App
     logoutDest _ = HomeR
@@ -252,15 +254,20 @@ instance YesodAuth App where
         case x of
             Just (Entity uid _) -> return $ Authenticated uid
             Nothing -> Authenticated <$> insert User
-                { userIdent = credsIdent creds
-                , userPassword = Nothing
+                { userEmail = credsIdent creds
                 }
 
     -- You can add other plugins like Google Email, email or OAuth here
     authPlugins :: App -> [AuthPlugin App]
-    authPlugins app = [authOpenId Claimed []] ++ extraAuthPlugins
-        -- Enable authDummy login if enabled.
-        where extraAuthPlugins = [authDummy | appAuthDummyLogin $ appSettings app]
+    authPlugins _ = [ authGoogleEmail googleClientId googleSecretKey ]
+
+    -- authHttpManager = error "Email doesn't need an HTTP manager"
+
+googleClientId :: Text
+googleClientId = "37775297136-krc6ss8ema49fb5pakb80upi1d69t7kv.apps.googleusercontent.com"
+
+googleSecretKey :: Text
+googleSecretKey = "EokHyRvEOQlblYSJJqZqU12a"
 
 -- | Access function to determine if a user is logged in.
 isAuthenticated :: Handler AuthResult
