@@ -15,3 +15,9 @@ Location
     latitude Double
     deriving Eq
     deriving Show
+HostedGame
+    title Text
+    location Location
+    host Text
+    deriving Eq
+    deriving Show
