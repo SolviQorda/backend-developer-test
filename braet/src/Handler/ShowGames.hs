@@ -11,7 +11,7 @@ getShowGamesR userId = do
   return $ toJSON $ Prelude.map (\r -> entityVal r) games
 
 instance ToJSON HostedGame where
-  toJSON (HostedGame title location host) =
+  toJSON (HostedGame title location host hostId) =
     object
       [ "Title" .= title
       , "Location" .= ((locationLongitude location :: Double),

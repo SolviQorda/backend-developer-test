@@ -19,6 +19,7 @@ HostedGame
     title Text
     location Location
     host Text
+    hostId UserId
     deriving Eq
     deriving Show
 JoinGameRequest

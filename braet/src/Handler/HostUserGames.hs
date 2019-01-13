@@ -4,9 +4,10 @@ module Handler.HostUserGames where
 
 import Import
 
-getHostUserGamesR :: UserId -> UserProfile -> Handler Html
+getHostUserGamesR :: UserId -> UserProfile -> Handler Value
 getHostUserGamesR userId userProfile = do
-  _ <- runDB $ insertMany $ parseGames userProfile
+  _ <- runDB $ deleteWhere [HostedGameHostId ==. userId]
+  _ <- runDB $ insertMany $ parseGames userId $ userProfile
   redirect $ ShowGamesR userId
 
 -- postHostUserGamesR :: UserId -> UserProfile -> Handler Html
@@ -14,8 +15,8 @@ getHostUserGamesR userId userProfile = do
 --   _ <- runDB $ insertMany $ parseGames userProfile
 --   redirect $ ShowGamesR userId
 
-parseGames :: UserProfile -> [HostedGame]
-parseGames userProfile =
+parseGames :: UserId -> UserProfile -> [HostedGame]
+parseGames userId userProfile =
    Prelude.map makeGame (games userProfile)
 -- It would be preferable to get this type safety back somehow.
   where
@@ -25,6 +26,7 @@ parseGames userProfile =
           game
           (parseLocation $ location userProfile)
           (name userProfile)
+          userId
 
 parseLocation :: [Text] -> Location
 parseLocation loc

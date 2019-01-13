@@ -10,19 +10,18 @@ getRegisterProfileR userId userProfile = do
   redirect $ HostUserGamesR userId $ userProfile
   return $ toJSON userProfile
 
-postRegisterProfileR :: UserId -> UserProfile -> Handler Value
-postRegisterProfileR userId userProfile = do
-  -- _ <- runDB $ P.insert userProfile
-  redirect $ HostUserGamesR userId $ userProfile
+-- postRegisterProfileR :: UserId -> UserProfile -> Handler Value
+-- postRegisterProfileR userId userProfile = do
+--   redirect $ HostUserGamesR userId $ userProfile
   -- return $ toJSON userProfile
 
 instance ToJSON UserProfile where
-  toJSON (UserProfile uid name location games age availableToHost q) =
+  toJSON (UserProfile name location games age availableToHost q) =
     object
-      [   "Name" .= name
+        [ "Name" .= name
         --want to cast this to a Double for sorting
         , "My Location" .= (location :: [Text])
         , "Games I Play" .= (games :: [Text])
         , "My age" .= age
         , "Available to host" .= availableToHost
-      ]
+        ]

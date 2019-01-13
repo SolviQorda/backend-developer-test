@@ -10,7 +10,7 @@
 / HomeR GET POST
 
 /profile ProfileR GET
-/user/!#UserId/profileRegistered/+UserProfile RegisterProfileR GET POST
+/user/!#UserId/profileRegistered/+UserProfile RegisterProfileR GET
 /user/!#UserId/hostUserGames/+UserProfile/ HostUserGamesR GET
 /user/!#UserId/showGames/ ShowGamesR GET
 /user/!#UserId/requestGame/!#HostedGameId RequestGameR POST

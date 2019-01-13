@@ -22,8 +22,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"]
 
 data UserProfile =
   UserProfile
-    { uid             :: Text
-    , name            :: Text
+    { name            :: Text
     , location        :: [Text]
     , games           :: [Text]
     , age             :: Text
@@ -33,9 +32,9 @@ data UserProfile =
 
 instance PathMultiPiece UserProfile where
   toPathMultiPiece
-    (UserProfile uid name location games age availableToHost q)
-      = uid : name : (T.unwords location) : (T.unwords games) : age : availableToHost : q
+    (UserProfile name location games age availableToHost q)
+      = name : (T.unwords location) : (T.unwords games) : age : availableToHost : q
 
   fromPathMultiPiece
-    ( uid : name : location : games : age : availableToHost : q)
-      = Just $ UserProfile uid name (T.words location) (T.words games) age availableToHost q
+    ( name : location : games : age : availableToHost : q)
+      = Just $ UserProfile name (T.words location) (T.words games) age availableToHost q
