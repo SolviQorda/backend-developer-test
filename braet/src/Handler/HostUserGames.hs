@@ -9,10 +9,10 @@ getHostUserGamesR userId userProfile = do
   _ <- runDB $ insertMany $ parseGames userProfile
   redirect $ ShowGamesR userId
 
-postHostUserGamesR :: UserId -> UserProfile -> Handler Html
-postHostUserGamesR userId userProfile = do
-  _ <- runDB $ insertMany $ parseGames userProfile
-  redirect $ ShowGamesR userId
+-- postHostUserGamesR :: UserId -> UserProfile -> Handler Html
+-- postHostUserGamesR userId userProfile = do
+--   _ <- runDB $ insertMany $ parseGames userProfile
+--   redirect $ ShowGamesR userId
 
 parseGames :: UserProfile -> [HostedGame]
 parseGames userProfile =

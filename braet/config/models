@@ -21,3 +21,8 @@ HostedGame
     host Text
     deriving Eq
     deriving Show
+JoinGameRequest
+    player UserId
+    game HostedGameId
+    deriving Eq
+    deriving Show

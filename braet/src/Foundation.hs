@@ -122,6 +122,7 @@ instance Yesod App where
     isAuthorized (RegisterProfileR _ _) _ = return Authorized
     isAuthorized (ShowGamesR _) _ = return Authorized
     isAuthorized (HostUserGamesR _ _) _ = return Authorized
+    isAuthorized (RequestGameR _ _) _ = return Authorized
 
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
@@ -210,6 +211,7 @@ instance YesodAuth App where
     -- You can add other plugins like Google Email, email or OAuth here
     authPlugins :: App -> [AuthPlugin App]
     authPlugins _ = [ authGoogleEmail googleClientId googleSecretKey ]
+
 
 -- | Access function to determine if a user is logged in.
 isAuthenticated :: Handler AuthResult
