@@ -11,5 +11,5 @@
 
 /profile ProfileR GET
 /user/!#UserId/profileRegistered/+UserProfile RegisterProfileR GET POST
-/hostUserGames/+UserProfile/ HostUserGamesR POST
-/!#UserId/showGames/ ShowGamesR GET
+/user/!#UserId/hostUserGames/+UserProfile/ HostUserGamesR GET 
+/user/!#UserId/showGames/ ShowGamesR GET

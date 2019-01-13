@@ -3,18 +3,20 @@
 module Handler.HostUserGames where
 
 import Import
-import qualified Data.Text as T
-import qualified Data.Array as A
 
-postHostUserGamesR :: UserProfile -> Handler Html
-postHostUserGamesR userProfile = do
+getHostUserGamesR :: UserId -> UserProfile -> Handler Html
+getHostUserGamesR userId userProfile = do
   _ <- runDB $ insertMany $ parseGames userProfile
-  redirect ProfileR
+  redirect $ ShowGamesR userId
+
+postHostUserGamesR :: UserId -> UserProfile -> Handler Html
+postHostUserGamesR userId userProfile = do
+  _ <- runDB $ insertMany $ parseGames userProfile
+  redirect $ ShowGamesR userId
 
 parseGames :: UserProfile -> [HostedGame]
 parseGames userProfile =
    Prelude.map makeGame (games userProfile)
-
 -- It would be preferable to get this type safety back somehow.
   where
     makeGame :: Text -> HostedGame

@@ -5,10 +5,10 @@ module Handler.ShowGames where
 import Import
 import qualified Data.Text as T
 
-getShowGamesR :: UserId -> Handler [Value]
+getShowGamesR :: UserId -> Handler Value
 getShowGamesR userId = do
   games <- runDB $ selectList [] [Asc HostedGameTitle]
-  return $ Prelude.map toJSON games
+  return $ toJSON $ Prelude.map (\r -> entityVal r) games
 
 instance ToJSON HostedGame where
   toJSON (HostedGame title location host) =
@@ -18,8 +18,3 @@ instance ToJSON HostedGame where
                        (locationLatitude location  :: Double))
       , "Host" .= host
       ]
-
-locationToJson :: Location -> [Double]
-locationToJson loc = [ (locationLongitude loc :: Double)
-                     , (locationLatitude loc :: Double)
-                     ]
