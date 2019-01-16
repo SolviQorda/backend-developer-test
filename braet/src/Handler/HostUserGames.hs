@@ -6,12 +6,30 @@ import Import
 
 postHostUserGamesR :: Handler Value
 postHostUserGamesR = do
-  (authId, user) <- requireAuthPair
-  _ <- runDB $ deleteWhere [HostedGameHostId ==. authId]
-  --get the user profile
-  profile <- runDB $ selectList [UserProfilePlayerId == authId]
-  _ <- runDB $ insertMany $ parseGames authId $ (entityVal $ Prelude.head profile)
-  redirect $ ShowGamesR
+    (authId, user) <- requireAuthPair
+    _        <- runDB $
+                    deleteWhere
+                      [HostedGameHostId ==. authId]
+    --get the user profile
+    profile  <- runDB $
+                    selectList
+                      [UserProfilePlayerId ==. authId]
+                      [Asc UserProfilePlayerId]
+    --insert all possible games into the db
+    games    <- runDB $
+                    insertMany $
+                      parseGames authId (entityVal $ Prelude.head profile)
+    -- redirect ShowGamesR
+    return $ toJSON $ parseGames authId (entityVal $ Prelude.head profile)
+
+instance ToJSON HostedGame where
+  toJSON (HostedGame title longitude latitude host hostId) =
+    object
+      [ "Title"     .= title
+      , "longitude" .= longitude
+      , "Latitude"  .= latitude
+      , "Host"      .= host
+      ]
 
 parseGames :: UserId -> UserProfile -> [HostedGame]
 parseGames userId userProfile =
@@ -22,7 +40,7 @@ parseGames userId userProfile =
     makeGame game =
       HostedGame
           game
-          (Prelude.read $ unpack (userProfileLongitude userProfile) :: Double)
-          (Prelude.read $ unpack (userProfileLatitude userProfile) :: Double)
+          (userProfileLongitude userProfile)
+          (userProfileLatitude userProfile)
           (userProfileName userProfile)
           userId

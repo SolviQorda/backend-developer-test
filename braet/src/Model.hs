@@ -13,7 +13,6 @@ module Model where
 
 import ClassyPrelude.Yesod
 import Database.Persist.Quasi
-import qualified Data.Text as T
 
 -- You can define all of your database entities in the entities file.
 -- You can find more information on persistent and how to declare entities
@@ -21,6 +20,29 @@ import qualified Data.Text as T
 -- http://www.yesodweb.com/book/persistent/
 share [mkPersist sqlSettings, mkMigrate "migrateAll"]
     $(persistFileWith lowerCaseSettings "config/models")
+
+data InputProfile = InputProfile
+  { name            :: Text
+  , longitude       :: Double
+  , latitude        :: Double
+  , games           :: [Text]
+  , age             :: Int
+  , availableToHost :: Bool
+  } deriving (Eq, Show, Generic)
+
+
+instance FromJSON InputProfile where
+  parseJSON (Object v) =
+--     -- withObject "InputProfile" $ \v ->
+      InputProfile
+    <$> v .: "name"
+    <*> v .: "longitude"
+    <*> v .: "latitude"
+    <*> v .: "games"
+    <*> v .: "age"
+    <*> v .: "availableToHost"
+  parseJSON _ = mzero
+
 
 -- instance PathMultiPiece UserProfile where
 --   toPathMultiPiece

@@ -45,7 +45,7 @@ userGames ps = userProfileGames $ entityVal p
   where p = Prelude.head ps
 
 instance ToJSON HostedGame where
-  toJSON (HostedGame title longitude latitude host hostId) =
+  toJSON (HostedGame title longitude latitude host _) =
     object
       [ "Title" .= title
       , "Longitude" .= longitude

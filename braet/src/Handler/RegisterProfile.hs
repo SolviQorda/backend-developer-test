@@ -11,11 +11,13 @@ import Data.Maybe
 import GHC.Generics
 
 --make a new profile
-postRegisterProfileR :: InputProfile -> Handler Value
-postRegisterProfileR inputProfile = do
+postRegisterProfileR :: Handler Value
+postRegisterProfileR = do
   (authId, user) <- requireAuthPair
+  inputProfile   <- requireJsonBody :: Handler InputProfile
   _              <- runDB $ insert $ makeProfile inputProfile authId
   return $ toJSON $ makeProfile inputProfile authId
+
 
 --update an existing profile
 -- putRegisterProfileR :: Value -> Handler Value
@@ -24,17 +26,6 @@ postRegisterProfileR inputProfile = do
 --   old
 --   _              <- runDB $ replace authId $ makeProfile inputProfile authId
 --   return $ toJSON $ makeProfile inputProfile authId
-
-instance FromJSON InputProfile where
-  parseJSON (Object v) =
---     -- withObject "InputProfile" $ \v ->
-      InputProfile
-    <$> v .: "name"
-    <*> v .: "longitude"
-    <*> v .: "latitude"
-    <*> v .: "games"
-    <*> v .: "age"
-    <*> v .: "availableToHost"
 
 instance ToJSON UserProfile where
   toJSON (UserProfile playerId name longitude latitude games age availableToHost) =
@@ -59,12 +50,3 @@ makeProfile inputProfile userId =
     , userProfileAge             = age inputProfile
     , userProfileAvailableToHost = availableToHost inputProfile
     }
-
-data InputProfile = InputProfile
-  { name            :: Text
-  , longitude       :: Double
-  , latitude        :: Double
-  , games           :: [Text]
-  , age             :: Int
-  , availableToHost :: Bool
-  } deriving (Eq, Show, Generic)
