@@ -6,33 +6,27 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs#-}
 
-module Handler.ShowGames where
+module Handler.MatchedPlayers where
 
 import Import
 import qualified Data.Text as T
 import Database.Persist.Sql
 
--- getShowGamesR :: Handler Value
--- getShowGamesR = do
---   (authId, user) <- requireAuthPair
---   games <- runDB $ selectList [HostedGameHostId ==. authId] [Asc HostedGameTitle]
---   return $ toJSON $ Prelude.map (\r -> entityVal r) games
-
-getShowGamesR :: Handler Value
-getShowGamesR = do
+getMatchedPlayersR :: Handler Value
+getMatchedPlayersR = do
   -- TODO: switch this with selectFirst for safety.
     (authId, user) <- requireAuthPair
     user  <- runDB $ selectList [UserProfilePlayerId ==. (authId)] [Asc UserProfilePlayerId]
-    games <- selectGames (userGames user) (fst $ userLongLat user) (snd $ userLongLat user)
-    return $ toJSON $ Prelude.map entityVal $ games
+    players <- selectHosts (userGames user) (fst $ userLongLat user) (snd $ userLongLat user)
+    return $ toJSON $ Prelude.map entityVal $ players
       where
-        selectGames
+        selectHosts
           :: [Text]
           -> Double
           -> Double
-          -> Handler [Entity HostedGame]
-        selectGames t u v = runDB $ rawSql s [toPersistValue t, toPersistValue u, toPersistValue v]
-          where s = "SELECT ?? FROM hosted_game WHERE title IN ? ORDER BY ST_DISTANCESPHERE(ST_POINT(?,?), ST_POINT(latitude,longitude))"
+          -> Handler [Entity HostDetails]
+        selectHosts t u v = runDB $ rawSql s [toPersistValue t, toPersistValue u, toPersistValue v]
+          where s = "SELECT ?? FROM host_details WHERE games IN ? ORDER BY ST_DISTANCESPHERE(ST_POINT(?,?), ST_POINT(latitude,longitude))"
 
 userLongLat :: [Entity UserProfile] -> (Double, Double)
 userLongLat ps =
@@ -44,10 +38,10 @@ userGames :: [Entity UserProfile] -> [Text]
 userGames ps = userProfileGames $ entityVal p
   where p = Prelude.head ps
 
-instance ToJSON HostedGame where
-  toJSON (HostedGame title longitude latitude host _) =
+instance ToJSON HostDetails where
+  toJSON (HostDetails games longitude latitude host _) =
     object
-      [ "Title" .= title
+      [ "Games" .= games
       , "Longitude" .= longitude
       , "Latitude" .= latitude
       , "Host" .= host

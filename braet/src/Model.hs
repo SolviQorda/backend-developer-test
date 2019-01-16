@@ -41,14 +41,39 @@ instance FromJSON InputProfile where
     <*> v .: "games"
     <*> v .: "age"
     <*> v .: "availableToHost"
-  parseJSON _ = mzero
+  parseJSON _          = mzero
 
+instance ToJSON UserProfile where
+  toJSON (UserProfile playerId name longitude latitude games age availableToHost) =
+    object
+      [ "Name" .= name
+      --want to cast this to a Double for sorting
+      , "Longitude" .= longitude
+      , "Latitude" .= latitude
+      , "My games" .= games
+      , "My age" .= age
+      , "Available to host" .= availableToHost
+      ]
 
--- instance PathMultiPiece UserProfile where
---   toPathMultiPiece
---     (UserProfile playerId name longitude latitude games age availableToHost q)
---       = (pack $ show playerId) : name : longitude : latitude : (T.unwords games) : age : availableToHost : q
---
---   fromPathMultiPiece
---     ( playerId : name : longitude : latitude : games : age : availableToHost : q)
---       = Just $ UserProfile playerId name longitude latitude (T.words games) age availableToHost q
+instance ToJSON (Entity HostDetails) where
+  toJSON (Entity pid p) =
+    object
+      [ "id"        .=(String $ toPathPiece pid)
+      , "Games"     .= hostDetailsGames p
+      , "longitude" .= hostDetailsLongitude p
+      , "Latitude"  .= hostDetailsLatitude p
+      , "Host"      .= hostDetailsHostId p
+      ]
+
+data HostDetailsRequestId = HostDetailsRequestId {requestId :: HostDetailsId}
+
+instance ToJSON HostDetailsRequestId where
+    toJSON (HostDetailsRequestId requestId) =
+      object
+        [ "requestId" .= requestId]
+
+instance FromJSON HostDetailsRequestId where
+  parseJSON (Object v) =
+    HostDetailsRequestId
+    <$> v .: "requestId"
+  parseJSON _          = mzero

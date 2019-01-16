@@ -16,8 +16,8 @@ postRegisterProfileR = do
   (authId, user) <- requireAuthPair
   inputProfile   <- requireJsonBody :: Handler InputProfile
   _              <- runDB $ insert $ makeProfile inputProfile authId
-  return $ toJSON $ makeProfile inputProfile authId
-
+  -- return $ toJSON $ makeProfile inputProfile authId
+  sendResponseStatus status201 ("PROFILE REGISTERED" :: Text)
 
 --update an existing profile
 -- putRegisterProfileR :: Value -> Handler Value
@@ -26,18 +26,6 @@ postRegisterProfileR = do
 --   old
 --   _              <- runDB $ replace authId $ makeProfile inputProfile authId
 --   return $ toJSON $ makeProfile inputProfile authId
-
-instance ToJSON UserProfile where
-  toJSON (UserProfile playerId name longitude latitude games age availableToHost) =
-    object
-        [ "Name" .= name
-        --want to cast this to a Double for sorting
-        , "Longitude" .= longitude
-        , "Latitude" .= latitude
-        , "My games" .= games
-        , "My age" .= age
-        , "Available to host" .= availableToHost
-        ]
 
 makeProfile :: InputProfile -> UserId -> UserProfile
 makeProfile inputProfile userId =

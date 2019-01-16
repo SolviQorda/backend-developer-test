@@ -5,8 +5,8 @@ User
     email Text
     UniqueUser email
     deriving Typeable
-HostedGame
-    title Text
+HostDetails
+    games [Text]
     longitude Double
     latitude Double
     host Text
@@ -16,7 +16,7 @@ HostedGame
     deriving Generic
 JoinGameRequest
     player UserId
-    game HostedGameId
+    game HostDetailsId
     deriving Eq
     deriving Show
     deriving Generic

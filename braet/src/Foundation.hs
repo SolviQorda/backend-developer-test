@@ -118,10 +118,10 @@ instance Yesod App where
 
     -- the profile route requires that the user is authenticated, so we
     -- delegate to that function
-    isAuthorized ProfileR _ = isAuthenticated
+    isAuthorized LoginConfirmationR _ = isAuthenticated
     isAuthorized RegisterProfileR _ = isAuthenticated
-    isAuthorized ShowGamesR _ = isAuthenticated
-    isAuthorized HostUserGamesR  _ = isAuthenticated
+    isAuthorized MatchedPlayersR _ = isAuthenticated
+    isAuthorized HostGamesR  _ = isAuthenticated
     isAuthorized RequestGameR _ = isAuthenticated
 
     -- This function creates static content files in the static folder
@@ -190,7 +190,7 @@ instance YesodAuth App where
 
     -- Where to send a user after successful login
     loginDest :: App -> Route App
-    loginDest _ = ProfileR
+    loginDest _ = LoginConfirmationR
     -- Where to send a user after logout
     logoutDest :: App -> Route App
     logoutDest _ = HomeR
@@ -218,12 +218,12 @@ instance YesodAuth App where
     -- You can add other plugins like Google Email, email or OAuth here
     authPlugins :: App -> [AuthPlugin App]
     authPlugins _ = [ authGoogleEmail googleClientId googleSecretKey ]
-
-googleClientId :: Text
-googleClientId = "37775297136-krc6ss8ema49fb5pakb80upi1d69t7kv.apps.googleusercontent.com"
-
-googleSecretKey :: Text
-googleSecretKey = "EokHyRvEOQlblYSJJqZqU12a"
+--
+-- googleClientId :: Text
+-- googleClientId = "37775297136-krc6ss8ema49fb5pakb80upi1d69t7kv.apps.googleusercontent.com"
+--
+-- googleSecretKey :: Text
+-- googleSecretKey = "EokHyRvEOQlblYSJJqZqU12a"
 
 -- | Access function to determine if a user is logged in.
 isAuthenticated :: Handler AuthResult

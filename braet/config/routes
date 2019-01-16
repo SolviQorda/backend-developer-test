@@ -7,10 +7,10 @@
 /favicon.ico FaviconR GET
 /robots.txt RobotsR GET
 
-/ HomeR GET POST
+/ HomeR GET
 
-/profile ProfileR GET
-/register RegisterProfileR POST 
-/host HostUserGamesR POST
-/games ShowGamesR GET
-/request RequestGameR POST
+/success LoginConfirmationR GET
+/register RegisterProfileR POST
+/host HostGamesR POST
+/players MatchedPlayersR GET
+/join RequestGameR POST
