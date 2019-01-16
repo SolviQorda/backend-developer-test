@@ -31,4 +31,3 @@ UserProfile
     deriving Eq
     deriving Show
     deriving Read
-    deriving Generic
