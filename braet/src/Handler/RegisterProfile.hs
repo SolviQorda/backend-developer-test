@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGuAGE DeriveGeneric     #-}
 
-
 module Handler.RegisterProfile where
 
 import Import
@@ -16,16 +15,16 @@ postRegisterProfileR = do
   (authId, user) <- requireAuthPair
   inputProfile   <- requireJsonBody :: Handler InputProfile
   _              <- runDB $ insert $ makeProfile inputProfile authId
-  -- return $ toJSON $ makeProfile inputProfile authId
   sendResponseStatus status201 ("PROFILE REGISTERED" :: Text)
 
 --update an existing profile
--- putRegisterProfileR :: Value -> Handler Value
--- putRegisterProfileR inputProfile = do
---   (authId, user) <- requireAuthPair
---   old
---   _              <- runDB $ replace authId $ makeProfile inputProfile authId
---   return $ toJSON $ makeProfile inputProfile authId
+putRegisterProfileR :: Handler Value
+putRegisterProfileR = do
+  (authId, user) <- requireAuthPair
+  newProfile     <- requireJsonBody :: Handler InputProfile
+  oldProfile     <- runDB $ selectList [UserProfilePlayerId ==. authId] [Asc UserProfilePlayerId]
+  _              <- runDB $ replace (entityKey $ Prelude.head oldProfile) $ makeProfile newProfile authId
+  sendResponseStatus status200 ("PROFILE UPDATED" :: Text)
 
 makeProfile :: InputProfile -> UserId -> UserProfile
 makeProfile inputProfile userId =

@@ -206,24 +206,12 @@ instance YesodAuth App where
             Just (Entity uid _) -> return $ Authenticated uid
             Nothing -> Authenticated <$> insert User
                 { userEmail = credsIdent creds
-                -- , userAccessProfile = Nothing
-                -- name Maybe Text
-                -- longitude Maybe Int
-                -- latitude Maybe Int
-                -- games Maybe [Text]
-                -- age Maybe Int
-                -- availableToHost Maybe Bool
                 }
 
     -- You can add other plugins like Google Email, email or OAuth here
     authPlugins :: App -> [AuthPlugin App]
     authPlugins _ = [ authGoogleEmail googleClientId googleSecretKey ]
---
--- googleClientId :: Text
--- googleClientId = "37775297136-krc6ss8ema49fb5pakb80upi1d69t7kv.apps.googleusercontent.com"
---
--- googleSecretKey :: Text
--- googleSecretKey = "EokHyRvEOQlblYSJJqZqU12a"
+
 
 -- | Access function to determine if a user is logged in.
 isAuthenticated :: Handler AuthResult
