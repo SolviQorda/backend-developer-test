@@ -4,35 +4,25 @@ module Handler.HostUserGames where
 
 import Import
 
-getHostUserGamesR :: UserId -> UserProfile -> Handler Value
-getHostUserGamesR userId userProfile = do
-  _ <- runDB $ deleteWhere [HostedGameHostId ==. userId]
-  _ <- runDB $ insertMany $ parseGames userId $ userProfile
-  redirect $ ShowGamesR userId
-
--- postHostUserGamesR :: UserId -> UserProfile -> Handler Html
--- postHostUserGamesR userId userProfile = do
---   _ <- runDB $ insertMany $ parseGames userProfile
---   redirect $ ShowGamesR userId
+postHostUserGamesR :: Handler Value
+postHostUserGamesR = do
+  (authId, user) <- requireAuthPair
+  _ <- runDB $ deleteWhere [HostedGameHostId ==. authId]
+  --get the user profile
+  profile <- runDB $ selectList [UserProfilePlayerId == authId]
+  _ <- runDB $ insertMany $ parseGames authId $ (entityVal $ Prelude.head profile)
+  redirect $ ShowGamesR
 
 parseGames :: UserId -> UserProfile -> [HostedGame]
 parseGames userId userProfile =
-   Prelude.map makeGame (games userProfile)
+   Prelude.map makeGame (userProfileGames userProfile)
 -- It would be preferable to get this type safety back somehow.
   where
     makeGame :: Text -> HostedGame
     makeGame game =
       HostedGame
           game
-          (parseLocation $ location userProfile)
-          (name userProfile)
+          (Prelude.read $ unpack (userProfileLongitude userProfile) :: Double)
+          (Prelude.read $ unpack (userProfileLatitude userProfile) :: Double)
+          (userProfileName userProfile)
           userId
-
-parseLocation :: [Text] -> Location
-parseLocation loc
-  | Prelude.length loc == 2 = Location
-                                (Prelude.read $ unpack ( (!!) loc 0) :: Double)
-                                (Prelude.read $ unpack ( (!!) loc 1) :: Double)
-  | otherwise               = Location
-                                (Prelude.read "0.00" :: Double)
-                                (Prelude.read "0.00" :: Double)

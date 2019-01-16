@@ -7,6 +7,8 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGuAGE DeriveGeneric     #-}
+
 module Model where
 
 import ClassyPrelude.Yesod
@@ -20,21 +22,11 @@ import qualified Data.Text as T
 share [mkPersist sqlSettings, mkMigrate "migrateAll"]
     $(persistFileWith lowerCaseSettings "config/models")
 
-data UserProfile =
-  UserProfile
-    { name            :: Text
-    , location        :: [Text]
-    , games           :: [Text]
-    , age             :: Text
-    , availableToHost :: Text
-    , q               :: [Text]
-    } deriving (Eq, Show, Read)
-
-instance PathMultiPiece UserProfile where
-  toPathMultiPiece
-    (UserProfile name location games age availableToHost q)
-      = name : (T.unwords location) : (T.unwords games) : age : availableToHost : q
-
-  fromPathMultiPiece
-    ( name : location : games : age : availableToHost : q)
-      = Just $ UserProfile name (T.words location) (T.words games) age availableToHost q
+-- instance PathMultiPiece UserProfile where
+--   toPathMultiPiece
+--     (UserProfile playerId name longitude latitude games age availableToHost q)
+--       = (pack $ show playerId) : name : longitude : latitude : (T.unwords games) : age : availableToHost : q
+--
+--   fromPathMultiPiece
+--     ( playerId : name : longitude : latitude : games : age : availableToHost : q)
+--       = Just $ UserProfile playerId name longitude latitude (T.words games) age availableToHost q

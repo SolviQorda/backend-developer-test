@@ -48,6 +48,10 @@ import Handler.HostUserGames
 import Handler.ShowGames
 import Handler.RequestGame
 
+import Network.Wai.Middleware.Cors
+
+
+
 -- This line actually creates our YesodDispatch instance. It is the second half
 -- of the call to mkYesodData which occurs in Foundation.hs. Please see the
 -- comments there for more details.
@@ -97,7 +101,7 @@ makeApplication foundation = do
     logWare <- makeLogWare foundation
     -- Create the WAI application and apply middlewares
     appPlain <- toWaiAppPlain foundation
-    return $ logWare $ defaultMiddlewaresNoLogging appPlain
+    return $ logWare $ simpleCors $ defaultMiddlewaresNoLogging appPlain
 
 makeLogWare :: App -> IO Middleware
 makeLogWare foundation =
@@ -111,7 +115,6 @@ makeLogWare foundation =
                             else FromSocket)
         , destination = Logger $ loggerSet $ appLogger foundation
         }
-
 
 -- | Warp settings for the given foundation value.
 warpSettings :: App -> Settings
@@ -163,6 +166,9 @@ appMain = do
 
     -- Run the application with Warp
     runSettings (warpSettings foundation) app
+    -- simpleCors $ echo
+    -- matchAny  "/" $ text "Success"
+
 
 
 --------------------------------------------------------------

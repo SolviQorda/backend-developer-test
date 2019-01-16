@@ -5,25 +5,30 @@ User
     email Text
     UniqueUser email
     deriving Typeable
-Email
-    email Text
-    userId UserId Maybe
-    verkey Text Maybe
-    UniqueEmail email
-Location
-    longitude Double
-    latitude Double
-    deriving Eq
-    deriving Show
 HostedGame
     title Text
-    location Location
+    longitude Double
+    latitude Double
     host Text
     hostId UserId
     deriving Eq
     deriving Show
+    deriving Generic
 JoinGameRequest
     player UserId
     game HostedGameId
     deriving Eq
     deriving Show
+    deriving Generic
+UserProfile
+    playerId UserId
+    name Text
+    longitude Double
+    latitude Double
+    games [Text]
+    age Int
+    availableToHost Bool
+    deriving Eq
+    deriving Show
+    deriving Read
+    deriving Generic

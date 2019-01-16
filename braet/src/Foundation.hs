@@ -97,7 +97,7 @@ instance Yesod App where
     -- To add it, chain it together with the defaultMiddleware: yesodMiddleware = defaultYesodMiddleware . defaultCsrfMiddleware
     -- For details, see the CSRF documentation in the Yesod.Core.Handler module of the yesod-core package.
     yesodMiddleware :: ToTypedContent res => Handler res -> Handler res
-    yesodMiddleware = defaultYesodMiddleware
+    yesodMiddleware = id
 
     -- The page to be redirected to when authentication is required.
     authRoute
@@ -119,10 +119,10 @@ instance Yesod App where
     -- the profile route requires that the user is authenticated, so we
     -- delegate to that function
     isAuthorized ProfileR _ = isAuthenticated
-    isAuthorized (RegisterProfileR _ _) _ = return Authorized
-    isAuthorized (ShowGamesR _) _ = return Authorized
-    isAuthorized (HostUserGamesR _ _) _ = return Authorized
-    isAuthorized (RequestGameR _ _) _ = return Authorized
+    isAuthorized RegisterProfileR _ = isAuthenticated
+    isAuthorized ShowGamesR _ = isAuthenticated
+    isAuthorized HostUserGamesR  _ = isAuthenticated
+    isAuthorized RequestGameR _ = isAuthenticated
 
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
@@ -206,11 +206,24 @@ instance YesodAuth App where
             Just (Entity uid _) -> return $ Authenticated uid
             Nothing -> Authenticated <$> insert User
                 { userEmail = credsIdent creds
+                -- , userAccessProfile = Nothing
+                -- name Maybe Text
+                -- longitude Maybe Int
+                -- latitude Maybe Int
+                -- games Maybe [Text]
+                -- age Maybe Int
+                -- availableToHost Maybe Bool
                 }
 
     -- You can add other plugins like Google Email, email or OAuth here
     authPlugins :: App -> [AuthPlugin App]
     authPlugins _ = [ authGoogleEmail googleClientId googleSecretKey ]
+
+googleClientId :: Text
+googleClientId = "37775297136-krc6ss8ema49fb5pakb80upi1d69t7kv.apps.googleusercontent.com"
+
+googleSecretKey :: Text
+googleSecretKey = "EokHyRvEOQlblYSJJqZqU12a"
 
 -- | Access function to determine if a user is logged in.
 isAuthenticated :: Handler AuthResult
