@@ -7,9 +7,7 @@ import Import
 
 postRequestGameR :: Handler Value
 postRequestGameR = do
-  authId          <- requireAuthId
+  subject <- getValidGoogleSubject
   gameRequestedId <- requireJsonBody :: Handler HostDetailsRequestId
-  _               <- runDB $
-                      insert $
-                        JoinGameRequest authId (requestId gameRequestedId :: HostDetailsId)
+  _  <- runDB $ insert $ JoinGameRequest subject (requestId gameRequestedId :: HostDetailsId)
   sendResponseStatus status201 ("REQUEST SENT" :: Text)

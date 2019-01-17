@@ -41,16 +41,12 @@ import System.Log.FastLogger                (defaultBufSize, newStdoutLoggerSet,
 -- Import all relevant handler modules here.
 -- Don't forget to add new modules to your cabal file!
 import Handler.Common
-import Handler.Home
-import Handler.LoginConfirmation
 import Handler.RegisterProfile
 import Handler.HostUserGames
 import Handler.MatchedPlayers
 import Handler.RequestGame
 
 import Network.Wai.Middleware.Cors
-
-
 
 -- This line actually creates our YesodDispatch instance. It is the second half
 -- of the call to mkYesodData which occurs in Foundation.hs. Please see the
@@ -94,6 +90,15 @@ makeFoundation appSettings = do
     -- Return the foundation
     return $ mkFoundation pool
 
+-- | Allow headers with values other then allowed by simpleCors.
+corsWithHeaders :: Middleware
+corsWithHeaders = cors (const $ Just policy)
+    where
+      policy = simpleCorsResourcePolicy
+        { corsRequestHeaders = ["Content-Type", "content-type", "Authorization", "authorization" ]
+        , corsMethods = [ "GET", "PUT", "OPTIONS", "POST", "HEAD" ]
+        }
+
 -- | Convert our foundation to a WAI Application by calling @toWaiAppPlain@ and
 -- applying some additional middlewares.
 makeApplication :: App -> IO Application
@@ -101,7 +106,7 @@ makeApplication foundation = do
     logWare <- makeLogWare foundation
     -- Create the WAI application and apply middlewares
     appPlain <- toWaiAppPlain foundation
-    return $ logWare $ simpleCors $ defaultMiddlewaresNoLogging appPlain
+    return $ logWare $ corsWithHeaders $ defaultMiddlewaresNoLogging appPlain
 
 makeLogWare :: App -> IO Middleware
 makeLogWare foundation =

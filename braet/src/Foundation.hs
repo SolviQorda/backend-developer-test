@@ -13,17 +13,24 @@ module Foundation where
 import Import.NoFoundation
 import Database.Persist.Sql (ConnectionPool, runSqlPool)
 import Data.Aeson
+import qualified Data.ByteString as ByteString
+import Control.Lens
+import Control.Monad.Time
+import Crypto.JWT
 import Text.Hamlet          (hamletFile)
 import Text.Jasmine         (minifym)
 import Control.Monad.Logger (LogSource)
+import Control.Monad.Trans.Except
+
+import Network.HTTP.Simple (getResponseBody, httpJSON, parseRequest, setRequestHeaders)
+import qualified Network.Wai as NetworkWai
 
 -- Used only when in "auth-dummy-login" setting is enabled.
 import Yesod.Auth.Dummy
 
 import Yesod.Auth.OpenId    (authOpenId, IdentifierType (Claimed))
-import Yesod.Auth.GoogleEmail2
 import Yesod.Default.Util   (addStaticContentExternal)
-import Yesod.Core.Types     (Logger)
+import Yesod.Core.Types     (Logger, AuthResult(..))
 import qualified Yesod.Core.Unsafe as Unsafe
 import qualified Data.CaseInsensitive as CI
 import qualified Data.Text.Encoding as TE
@@ -60,7 +67,7 @@ data MenuTypes
 -- http://www.yesodweb.com/book/scaffolding-and-the-site-template#scaffolding-and-the-site-template_foundation_and_application_modules
 --
 -- This function also generates the following type synonyms:
--- type Handler = HandlerT App IO
+-- type Handler = HandlerT beApp IO
 -- type Widget = WidgetT App IO ()
 mkYesodData "App" $(parseRoutesFile "config/routes")
 
@@ -99,31 +106,6 @@ instance Yesod App where
     yesodMiddleware :: ToTypedContent res => Handler res -> Handler res
     yesodMiddleware = id
 
-    -- The page to be redirected to when authentication is required.
-    authRoute
-        :: App
-        -> Maybe (Route App)
-    authRoute _ = Just $ AuthR forwardUrl
-
-    isAuthorized
-        :: Route App  -- ^ The route the user is visiting.
-        -> Bool       -- ^ Whether or not this is a "write" request.
-        -> Handler AuthResult
-    -- Routes not requiring authentication.
-    isAuthorized (AuthR _) _ = return Authorized
-    isAuthorized HomeR _ = return Authorized
-    isAuthorized FaviconR _ = return Authorized
-    isAuthorized RobotsR _ = return Authorized
-    isAuthorized (StaticR _) _ = return Authorized
-
-    -- the profile route requires that the user is authenticated, so we
-    -- delegate to that function
-    isAuthorized LoginConfirmationR _ = isAuthenticated
-    isAuthorized RegisterProfileR _ = isAuthenticated
-    isAuthorized MatchedPlayersR _ = isAuthenticated
-    isAuthorized HostGamesR  _ = isAuthenticated
-    isAuthorized RequestGameR _ = isAuthenticated
-
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
     -- expiration dates to be set far in the future without worry of
@@ -160,19 +142,6 @@ instance Yesod App where
     makeLogger :: App -> IO Logger
     makeLogger = return . appLogger
 
--- Define breadcrumbs.
--- instance YesodBreadcrumbs App where
---     -- Takes the route that the user is currently on, and returns a tuple
---     -- of the 'Text' that you want the label to display, and a previous
---     -- breadcrumb route.
---     breadcrumb
---         :: Route App  -- ^ The route the user is visiting currently.
---         -> Handler (Text, Maybe (Route App))
---     breadcrumb HomeR = return ("Home", Nothing)
---     breadcrumb (AuthR _) = return ("Login", Just HomeR)
---     -- breadcrumb ProfileR = return ("Profile", Just HomeR)
---     breadcrumb  _ = return ("home", Nothing)
-
 -- How to run database actions.
 instance YesodPersist App where
     type YesodPersistBackend App = SqlBackend
@@ -185,43 +154,46 @@ instance YesodPersistRunner App where
     getDBRunner :: Handler (DBRunner App, Handler ())
     getDBRunner = defaultGetDBRunner appConnPool
 
-instance YesodAuth App where
-    type AuthId App = UserId
+newtype JWTAuthError = JWTAuthError Text
+type JWTSubject = Text
 
-    -- Where to send a user after successful login
-    loginDest :: App -> Route App
-    loginDest _ = LoginConfirmationR
-    -- Where to send a user after logout
-    logoutDest :: App -> Route App
-    logoutDest _ = HomeR
-    -- Override the above two destinations when a Referer: header is present
-    redirectToReferer :: App -> Bool
-    redirectToReferer _ = True
+data GoogleAuthError = GoogleAuthError JWTAuthError | GoogleAuthenticationRequired
 
-    authenticate :: (MonadHandler m, HandlerSite m ~ App)
-                 => Creds App -> m (AuthenticationResult App)
-    authenticate creds = liftHandler $ runDB $ do
-        x <- getBy $ UniqueUser $ credsIdent creds
-        case x of
-            Just (Entity uid _) -> return $ Authenticated uid
-            Nothing -> Authenticated <$> insert User
-                { userEmail = credsIdent creds
-                }
+getValidSubject :: JWKSet -> ByteString -> IO (Either JWTAuthError JWTSubject)
+getValidSubject k compactToken = do
+  result <- runExceptT $ do
+    jwt <- decodeCompact $ fromStrict compactToken
+    verifyClaims (defaultJWTValidationSettings (== fromString "37775297136-qe8jqg8fjli91g1jgn98e2ctpa4e7pj7.apps.googleusercontent.com")) k jwt
+  pure $ case result of
+    Left e -> Left $ JWTAuthError $ pack $ show (e :: JWTError) <> " " <> show compactToken
+    Right claims -> case claims^.claimSub of
+      Nothing -> Left $ JWTAuthError $ pack "Claims set did not contain a subject claim"
+      Just sub -> case sub ^? string of
+        Nothing -> Left $ JWTAuthError $ pack "Subject claim was a URI"
+        Just s -> Right $ pack s
 
-    -- You can add other plugins like Google Email, email or OAuth here
-    authPlugins :: App -> [AuthPlugin App]
-    authPlugins _ = [ authGoogleEmail googleClientId googleSecretKey ]
+googleClientId :: Text
+googleClientId = "37775297136-krc6ss8ema49fb5pakb80upi1d69t7kv.apps.googleusercontent.com"
 
+googleSecretKey :: Text
+googleSecretKey = "EokHyRvEOQlblYSJJqZqU12a"
+
+maybeIdToken :: HandlerFor App (Maybe ByteString)
+maybeIdToken = map (ByteString.drop (length ("Bearer: " :: String))) . lookup "authorization" . NetworkWai.requestHeaders <$> waiRequest
 
 -- | Access function to determine if a user is logged in.
-isAuthenticated :: Handler AuthResult
-isAuthenticated = do
-    muid <- maybeAuthId
-    return $ case muid of
-        Nothing -> Unauthorized "You must login to access this page"
-        Just _ -> Authorized
-
-instance YesodAuthPersist App
+getValidGoogleSubject :: Handler JWTSubject
+getValidGoogleSubject = do
+  idToken <- maybeIdToken
+  case idToken of
+    Nothing -> sendResponseStatus status403 ("Not authenticated" :: Text)
+    Just idToken' -> do
+      req <- parseRequest "https://www.googleapis.com/oauth2/v3/certs"
+      resp <- httpJSON $ setRequestHeaders [] req
+      eitherSubject <- liftIO $ (getValidSubject (getResponseBody resp) idToken')
+      case eitherSubject of
+        Left (JWTAuthError err) -> sendResponseStatus status403 err
+        Right subject -> pure subject
 
 -- This instance is required to use forms. You can modify renderMessage to
 -- achieve customized and internationalized form validation messages.

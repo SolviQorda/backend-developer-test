@@ -41,13 +41,21 @@ dependencies:
 - unordered-containers
 - containers
 - vector
+- jose
 - time
 - case-insensitive
 - wai
+- monad-time
+- word8
 - foreign-store
 - array
+- monad-time
+- exceptions
 - wai-cors
+- lens
+- transformers
 - http-types
+# - yesod-auth-jwt
 # The library contains all of our application code. The executable
 # defined below is just a thin wrapper.
 library:

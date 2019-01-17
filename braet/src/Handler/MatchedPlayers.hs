@@ -15,18 +15,18 @@ import Database.Persist.Sql
 getMatchedPlayersR :: Handler Value
 getMatchedPlayersR = do
   -- TODO: switch this with selectFirst for safety.
-    (authId, user) <- requireAuthPair
-    user  <- runDB $ selectList [UserProfilePlayerId ==. (authId)] [Asc UserProfilePlayerId]
-    players <- selectHosts (userGames user) (fst $ userLongLat user) (snd $ userLongLat user)
-    return $ toJSON $ Prelude.map entityVal $ players
-      where
-        selectHosts
-          :: [Text]
-          -> Double
-          -> Double
-          -> Handler [Entity HostDetails]
-        selectHosts t u v = runDB $ rawSql s [toPersistValue t, toPersistValue u, toPersistValue v]
-          where s = "SELECT ?? FROM host_details WHERE games IN ? ORDER BY ST_DISTANCESPHERE(ST_POINT(?,?), ST_POINT(latitude,longitude))"
+  subject <- getValidGoogleSubject
+  user  <- runDB $ selectList [UserProfilePlayerId ==. subject] [Asc UserProfilePlayerId]
+  players <- uncurry (selectHosts (userGames user)) $ userLongLat user
+  return $ toJSON $ Prelude.map entityVal players
+    where
+      selectHosts
+        :: [Text]
+        -> Double
+        -> Double
+        -> Handler [Entity HostDetails]
+      selectHosts t u v = runDB $ rawSql s [toPersistValue t, toPersistValue u, toPersistValue v]
+        where s = "SELECT ?? FROM host_details WHERE games IN ? ORDER BY ST_DISTANCESPHERE(ST_POINT(?,?), ST_POINT(latitude,longitude))"
 
 userLongLat :: [Entity UserProfile] -> (Double, Double)
 userLongLat ps =
