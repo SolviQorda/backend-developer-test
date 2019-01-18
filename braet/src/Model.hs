@@ -46,34 +46,12 @@ instance FromJSON InputProfile where
 instance ToJSON UserProfile where
   toJSON (UserProfile playerId name longitude latitude games age availableToHost) =
     object
-      [ "Name" .= name
+      [ "name" .= name
+      , "id" .= playerId
       --want to cast this to a Double for sorting
-      , "Longitude" .= longitude
-      , "Latitude" .= latitude
-      , "My games" .= games
-      , "My age" .= age
-      , "Available to host" .= availableToHost
+      , "longitude" .= longitude
+      , "latitude" .= latitude
+      , "games" .= games
+      , "age" .= age
+      , "availableToHost" .= availableToHost
       ]
-
-instance ToJSON (Entity HostDetails) where
-  toJSON (Entity pid p) =
-    object
-      [ "id"        .=(String $ toPathPiece pid)
-      , "Games"     .= hostDetailsGames p
-      , "longitude" .= hostDetailsLongitude p
-      , "Latitude"  .= hostDetailsLatitude p
-      , "Host"      .= hostDetailsHostId p
-      ]
-
-data HostDetailsRequestId = HostDetailsRequestId {requestId :: HostDetailsId}
-
-instance ToJSON HostDetailsRequestId where
-    toJSON (HostDetailsRequestId requestId) =
-      object
-        [ "requestId" .= requestId]
-
-instance FromJSON HostDetailsRequestId where
-  parseJSON (Object v) =
-    HostDetailsRequestId
-    <$> v .: "requestId"
-  parseJSON _          = mzero

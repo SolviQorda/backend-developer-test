@@ -7,6 +7,6 @@
 /robots.txt RobotsR GET
 
 /register RegisterProfileR POST PUT GET
-/host HostGamesR POST
+/host HostGamesR PUT GET
 /players MatchedPlayersR GET
-/join RequestGameR POST
+/join RequestGameR POST GET

@@ -5,23 +5,17 @@ module Handler.HostUserGames where
 import Import
 import Model
 
-postHostGamesR :: Handler Value
-postHostGamesR = do
+putHostGamesR :: Handler Value
+putHostGamesR = do
   subject <- getValidGoogleSubject
-  _ <- runDB $ deleteWhere [HostDetailsHostId ==. subject]
-  --get the user profile
-  profile <- runDB $ selectList [UserProfilePlayerId ==. subject] [Asc UserProfilePlayerId]
-  --insert all possible games into the db
-  games <- runDB $ insert $ parseHost subject (entityVal $ Prelude.head profile)
-  -- redirect ShowGamesR
-  -- return $ toJSON $ parseGames authId (entityVal $ Prelude.head profile)
-  sendResponseStatus status201 ("HOST STATUS PUBLISHED" :: Text)
+  availableToHost' <- requireJsonBody :: Handler Bool
+  profile <- runDB $ Prelude.head <$> selectList [UserProfilePlayerId ==. subject] [Asc UserProfilePlayerId]
+  let profileValue = entityVal profile
+  _ <- runDB $ replace (entityKey profile) $ profileValue { userProfileAvailableToHost = availableToHost' }
+  sendResponseStatus status200 ("Profile updated" :: Text)
 
-parseHost :: Text -> UserProfile -> HostDetails
-parseHost subject userProfile =
-      HostDetails
-          (userProfileGames userProfile)
-          (userProfileLongitude userProfile)
-          (userProfileLatitude userProfile)
-          (userProfileName userProfile)
-          subject
+getHostGamesR :: Handler Value
+getHostGamesR = do
+  subject <- getValidGoogleSubject
+  profile <- runDB $ selectList [UserProfilePlayerId ==. subject] [Asc UserProfilePlayerId]
+  sendResponseStatus status200 $ toJSON $ userProfileAvailableToHost $ Prelude.head $ Prelude.map entityVal profile

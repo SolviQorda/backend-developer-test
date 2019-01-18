@@ -6,7 +6,7 @@ import Data.Argonaut (Json, decodeJson, encodeJson, fromString, jsonParser)
 import Data.Argonaut.Core (stringify)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Debug.Trace (spy)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (liftAff)
@@ -37,6 +37,8 @@ type State =
   , profile :: Profile
   , result :: Maybe String
   , idToken :: Maybe String
+  , host :: Boolean
+  , playerId :: String
   }
 
 type Profile =
@@ -64,9 +66,16 @@ data Query a
   | SetProfileGames String a
   | SetProfileAge String a
   | SetProfileHost Boolean a
+  | SetHost Boolean a
+  | SetPlayerId String a
   | RegisterProfile a
   | UpdateProfile a
   | GetProfile a
+  | UpdateHost a
+  | GetHost a
+  | GetPlayers a
+  | PostRequest a
+  | GetRequests a
   | AwaitSignIn a
 
 ui :: H.Component HH.HTML Query Unit Void Aff
@@ -93,6 +102,8 @@ ui =
       , games: "[\"Settlers of Catan\", \"Risk\", \"Chess\"]"
       , host: false
       }
+    , playerId: ""
+    , host: false
     , result: Nothing
     , idToken: Nothing
     }
@@ -101,9 +112,9 @@ ui =
   render st =
     HH.div_ $
       [ HH.form_  $
-          [ HH.h1_ [ HH.text "API BASE URI" ]
+          [ HH.h1_ [ HH.text "Tests" ]
           , HH.label_
-              [ HH.div_ [ HH.text "URL:" ]
+              [ HH.div_ [ HH.text "API base URL:" ]
               , HH.input
                   [ HP.value st.apiBaseUri
                   , HE.onValueInput (HE.input SetProfileName)
@@ -115,10 +126,10 @@ ui =
               [ HP.class_ $ H.ClassName "g-signin2"
               , HP.attr (H.AttrName "data-onsuccess") "onSignIn"
               ]
-              [ HH.text "Login" ]
+              [ ]
           ]
       , HH.p_
-          [ HH.text $ "IdToken: " <> show st.idToken ]
+          $ maybe [] (\idToken -> [ HH.text $ "IdToken: " <> idToken ]) st.idToken
       , HH.form_  $
           [ HH.h1_ [ HH.text "Profile" ]
           , HH.label_
@@ -171,19 +182,79 @@ ui =
                   , HP.type_ HP.ButtonButton
                   , HE.onClick (HE.input_ RegisterProfile)
                   ]
-                  [ HH.text "Register" ]
+                  [ HH.text "POST" ]
               , HH.button
                   [ HP.disabled st.loading
                   , HP.type_ HP.ButtonButton
                   , HE.onClick (HE.input_ UpdateProfile)
                   ]
-                  [ HH.text "Update" ]
+                  [ HH.text "PUT" ]
               , HH.button
                   [ HP.disabled st.loading
                   , HP.type_ HP.ButtonButton
                   , HE.onClick (HE.input_ GetProfile)
                   ]
-                  [ HH.text "Get" ]
+                  [ HH.text "GET" ]
+              ]
+          , HH.form_ $
+              [ HH.h1_ [ HH.text "Host" ]
+              , HH.label_
+                  [ HH.div_ [ HH.text "Host:" ]
+                  , HH.input
+                      [ HP.type_ InputCheckbox
+                      , HP.checked st.host
+                      , HE.onChecked (HE.input SetHost)
+                      ]
+                  ]
+              , HH.p_
+                  [ HH.button
+                      [ HP.disabled st.loading
+                      , HP.type_ HP.ButtonButton
+                      , HE.onClick (HE.input_ UpdateHost)
+                      ]
+                      [ HH.text "PUT" ]
+                  , HH.button
+                      [ HP.disabled st.loading
+                      , HP.type_ HP.ButtonButton
+                      , HE.onClick (HE.input_ GetHost)
+                      ]
+                      [ HH.text "GET" ]
+                  ]
+              ]
+          , HH.form_ $
+              [ HH.h1_ [ HH.text "Players" ]
+              , HH.p_
+                  [ HH.button
+                      [ HP.disabled st.loading
+                      , HP.type_ HP.ButtonButton
+                      , HE.onClick (HE.input_ GetPlayers)
+                      ]
+                      [ HH.text "GET" ]
+                  ]
+              ]
+          , HH.form_  $
+              [ HH.h1_ [ HH.text "Requests" ]
+              , HH.label_
+                  [ HH.div_ [ HH.text "Player Id:" ]
+                  , HH.input
+                      [ HP.value st.playerId
+                      , HE.onValueInput (HE.input SetPlayerId)
+                      ]
+                  ]
+              , HH.p_
+                  [ HH.button
+                      [ HP.disabled st.loading
+                      , HP.type_ HP.ButtonButton
+                      , HE.onClick (HE.input_ PostRequest)
+                      ]
+                      [ HH.text "POST" ]
+                  , HH.button
+                      [ HP.disabled st.loading
+                      , HP.type_ HP.ButtonButton
+                      , HE.onClick (HE.input_ GetRequests)
+                      ]
+                      [ HH.text "GET" ]
+                  ]
               ]
           , HH.p_
               [ HH.text (if st.loading then "Working..." else "") ]
@@ -193,8 +264,8 @@ ui =
                 Just res ->
                   [ HH.h2_
                       [ HH.text "Response:" ]
-                  , HH.pre_
-                      [ HH.code_ [ HH.text res ] ]
+                  , HH.textarea
+                     [ HP.value res ]
                   ]
             ]
       ]
@@ -229,6 +300,12 @@ ui =
     SetProfileHost host a -> do
       H.modify_ (\state -> state { profile = state.profile { host = host } })
       pure a
+    SetHost host a -> do
+      H.modify_ (\state -> state { host = host })
+      pure a
+    SetPlayerId playerId a -> do
+      H.modify_ (\state -> state { playerId = playerId })
+      pure a
     RegisterProfile a -> do
       state <- H.get
       H.modify_ (_ { loading = true })
@@ -238,6 +315,20 @@ ui =
                         $ defaultRequest
                           { url = state.apiBaseUri <> "/register"
                           , content = Just $ AXRequest.json $ encodeJson $ requestifyProfile state.profile
+                          , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
+                          , method = Left POST
+                          }
+      H.modify_ (_ { loading = false, result = Just response.response })
+      pure a
+    PostRequest a -> do
+      state <- H.get
+      H.modify_ (_ { loading = true })
+      response <- H.liftAff
+                    $ AX.affjax
+                        AXResponse.string
+                        $ defaultRequest
+                          { url = state.apiBaseUri <> "/join"
+                          , content = Just $ AXRequest.json $ encodeJson $ state.playerId
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left POST
                           }
@@ -257,6 +348,20 @@ ui =
                           }
       H.modify_ (_ { loading = false, result = Just response.response })
       pure a
+    UpdateHost a -> do
+      state <- H.get
+      H.modify_ (_ { loading = true })
+      response <- H.liftAff
+                    $ AX.affjax
+                        AXResponse.string
+                        $ defaultRequest
+                          { url = state.apiBaseUri <> "/host"
+                          , content = Just $ AXRequest.json $ encodeJson state.host
+                          , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
+                          , method = Left PUT
+                          }
+      H.modify_ (_ { loading = false, result = Just response.response })
+      pure a
     GetProfile a -> do
       state <- H.get
       H.modify_ (_ { loading = true })
@@ -270,7 +375,45 @@ ui =
                           }
       H.modify_ (_ { loading = false, result = Just response.response })
       pure a
-
+    GetHost a -> do
+      state <- H.get
+      H.modify_ (_ { loading = true })
+      response <- H.liftAff
+                    $ AX.affjax
+                        AXResponse.string
+                        $ defaultRequest
+                          { url = state.apiBaseUri <> "/host"
+                          , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
+                          , method = Left GET
+                          }
+      H.modify_ (_ { loading = false, result = Just response.response })
+      pure a
+    GetPlayers a -> do
+      state <- H.get
+      H.modify_ (_ { loading = true })
+      response <- H.liftAff
+                    $ AX.affjax
+                        AXResponse.string
+                        $ defaultRequest
+                          { url = state.apiBaseUri <> "/players"
+                          , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
+                          , method = Left GET
+                          }
+      H.modify_ (_ { loading = false, result = Just response.response })
+      pure a
+    GetRequests a -> do
+      state <- H.get
+      H.modify_ (_ { loading = true })
+      response <- H.liftAff
+                    $ AX.affjax
+                        AXResponse.string
+                        $ defaultRequest
+                          { url = state.apiBaseUri <> "/join"
+                          , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
+                          , method = Left GET
+                          }
+      H.modify_ (_ { loading = false, result = Just response.response })
+      pure a
     AwaitSignIn a -> do
       _ <- fork do
         idToken <- liftAff awaitSignIn

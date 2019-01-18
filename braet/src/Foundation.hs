@@ -172,12 +172,6 @@ getValidSubject k compactToken = do
         Nothing -> Left $ JWTAuthError $ pack "Subject claim was a URI"
         Just s -> Right $ pack s
 
-googleClientId :: Text
-googleClientId = "37775297136-krc6ss8ema49fb5pakb80upi1d69t7kv.apps.googleusercontent.com"
-
-googleSecretKey :: Text
-googleSecretKey = "EokHyRvEOQlblYSJJqZqU12a"
-
 maybeIdToken :: HandlerFor App (Maybe ByteString)
 maybeIdToken = map (ByteString.drop (length ("Bearer: " :: String))) . lookup "authorization" . NetworkWai.requestHeaders <$> waiRequest
 
