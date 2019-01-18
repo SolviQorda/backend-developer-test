@@ -38,7 +38,6 @@ getRegisterProfileR = do
   profile  <- runDB $ selectList [UserProfilePlayerId ==. subject] [Asc UserProfilePlayerId]
   sendResponseStatus status200 $ toJSON $ Prelude.map entityVal profile
 
-
 makeProfile :: InputProfile -> Text -> UserProfile
 makeProfile inputProfile subject =
   UserProfile

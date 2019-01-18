@@ -9,8 +9,13 @@ postRequestGameR :: Handler Value
 postRequestGameR = do
   subject <- getValidGoogleSubject
   host' <- requireJsonBody :: Handler Text
-  _  <- runDB $ insert $ JoinGameRequest subject host'
-  sendResponseStatus status201 ("Request sent" :: Text)
+  host'' <- runDB $ selectList [UserProfilePlayerId ==. host'] []
+  if userProfileAvailableToHost $ Prelude.head $ Prelude.map entityVal host''
+    then do
+      _  <- runDB $ insert $ JoinGameRequest subject host'
+      sendResponseStatus status201 ("Request sent" :: Text)
+    else
+      sendResponseStatus status400 ("User is not currently available to host." :: Text)
 
 getRequestGameR :: Handler Value
 getRequestGameR = do
