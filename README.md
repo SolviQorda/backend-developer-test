@@ -24,7 +24,7 @@ At the moment any number of users can request to join a host's game. The spec me
 
 I think it would be valuable to explore using Servant, Scotty or WAI on its own instead of Yesod.
 
-Perhaps instead of EC2 Amazon might provide something specifcially for Docker.
+Perhaps instead of EC2 Amazon might provide something specifically for Docker.
 
 # Feedback on the challenge
 
