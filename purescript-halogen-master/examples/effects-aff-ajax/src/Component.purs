@@ -33,7 +33,7 @@ awaitSignIn = (fromEffectFnAff <<< _awaitSignIn) unit
 
 type State =
   { loading :: Boolean
-  , apiBaseUri :: String
+  , apiBaseUrl :: String
   , profile :: Profile
   , result :: Maybe String
   , idToken :: Maybe String
@@ -61,6 +61,7 @@ type RequestProfile =
 
 data Query a
   = SetProfileName String a
+  | SetApiBaseUrl String a
   | SetProfileLongitude String a
   | SetProfileLatitude String a
   | SetProfileGames String a
@@ -93,7 +94,7 @@ ui =
   initialState :: State
   initialState =
     { loading: false
-    , apiBaseUri: "http://localhost:3000"
+    , apiBaseUrl: "http://solvinaja.com:3000"
     , profile:
       { name: ""
       , age: ""
@@ -116,8 +117,8 @@ ui =
           , HH.label_
               [ HH.div_ [ HH.text "API base URL:" ]
               , HH.input
-                  [ HP.value st.apiBaseUri
-                  , HE.onValueInput (HE.input SetProfileName)
+                  [ HP.value st.apiBaseUrl
+                  , HE.onValueInput (HE.input SetApiBaseUrl)
                   ]
               ]
           ]
@@ -129,7 +130,7 @@ ui =
               [ ]
           ]
       , HH.p_
-          $ maybe [] (\idToken -> [ HH.text $ "IdToken: " <> idToken ]) st.idToken
+          $ maybe [] (\idToken -> [ HH.textarea [ HP.value $ "IdToken: " <> idToken ]]) st.idToken
       , HH.form_  $
           [ HH.h1_ [ HH.text "Profile" ]
           , HH.label_
@@ -306,6 +307,9 @@ ui =
     SetPlayerId playerId a -> do
       H.modify_ (\state -> state { playerId = playerId })
       pure a
+    SetApiBaseUrl apiBaseUrl a -> do
+      H.modify_ (\state -> state { apiBaseUrl = apiBaseUrl })
+      pure a
     RegisterProfile a -> do
       state <- H.get
       H.modify_ (_ { loading = true })
@@ -313,7 +317,7 @@ ui =
                     $ AX.affjax
                         AXResponse.string
                         $ defaultRequest
-                          { url = state.apiBaseUri <> "/register"
+                          { url = state.apiBaseUrl <> "/register"
                           , content = Just $ AXRequest.json $ encodeJson $ requestifyProfile state.profile
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left POST
@@ -327,7 +331,7 @@ ui =
                     $ AX.affjax
                         AXResponse.string
                         $ defaultRequest
-                          { url = state.apiBaseUri <> "/join"
+                          { url = state.apiBaseUrl <> "/join"
                           , content = Just $ AXRequest.json $ encodeJson $ state.playerId
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left POST
@@ -341,7 +345,7 @@ ui =
                     $ AX.affjax
                         AXResponse.string
                         $ defaultRequest
-                          { url = state.apiBaseUri <> "/register"
+                          { url = state.apiBaseUrl <> "/register"
                           , content = Just $ AXRequest.json $ encodeJson $ requestifyProfile state.profile
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left PUT
@@ -355,7 +359,7 @@ ui =
                     $ AX.affjax
                         AXResponse.string
                         $ defaultRequest
-                          { url = state.apiBaseUri <> "/host"
+                          { url = state.apiBaseUrl <> "/host"
                           , content = Just $ AXRequest.json $ encodeJson state.host
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left PUT
@@ -369,7 +373,7 @@ ui =
                     $ AX.affjax
                         AXResponse.string
                         $ defaultRequest
-                          { url = state.apiBaseUri <> "/register"
+                          { url = state.apiBaseUrl <> "/register"
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left GET
                           }
@@ -382,7 +386,7 @@ ui =
                     $ AX.affjax
                         AXResponse.string
                         $ defaultRequest
-                          { url = state.apiBaseUri <> "/host"
+                          { url = state.apiBaseUrl <> "/host"
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left GET
                           }
@@ -395,7 +399,7 @@ ui =
                     $ AX.affjax
                         AXResponse.string
                         $ defaultRequest
-                          { url = state.apiBaseUri <> "/players"
+                          { url = state.apiBaseUrl <> "/players"
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left GET
                           }
@@ -408,7 +412,7 @@ ui =
                     $ AX.affjax
                         AXResponse.string
                         $ defaultRequest
-                          { url = state.apiBaseUri <> "/join"
+                          { url = state.apiBaseUrl <> "/join"
                           , headers = maybe [] (pure <<< RequestHeader "Authorization" <<< ("Bearer: " <> _)) state.idToken
                           , method = Left GET
                           }
