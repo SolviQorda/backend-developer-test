@@ -1,0 +1,31 @@
+version: "2.1"
+services:
+  database:
+    user: postgres
+    image: mdillon/postgis
+    env_file: ./database/prod
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+  binary:
+    build: ./binary
+    command: /opt/server/dist/bin/braet
+    env_file: ./binary/prod
+    links:
+      - database
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./binary:/opt/server/
+    working_dir: /opt/server
+    depends_on:
+      database:
+        condition: service_healthy
+  tests:
+    image: halverneus/static-file-server
+    volumes:
+      - ./tests:/web
+    ports:
+      - "8080:8080"

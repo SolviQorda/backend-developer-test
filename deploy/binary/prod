@@ -1,0 +1,9 @@
+YESOD_APPROOT=http://localhost:3000
+YESOD_HOST=0.0.0.0
+PORT=3000
+YESOD_PGHOST=database
+YESOD_PGUSER=postgres
+YESOD_PGDATABASE=braet
+YESOD_PGPASS=zhuoshangyouxi
+YESOD_ADMIN_NAME=braetadmin
+YESOD_ADMIN_PASSWORD=zhuoshangyouxi

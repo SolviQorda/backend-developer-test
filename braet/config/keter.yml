@@ -1,6 +1,6 @@
 # After you've edited this file, remove the following line to allow
 # `yesod keter` to build your bundle.
-user-edited: false
+# user-edited: false
 
 # A Keter app is composed of 1 or more stanzas. The main stanza will define our
 # web application. See the Keter documentation for more information on
@@ -15,7 +15,7 @@ stanzas:
     #
     # The path given is for Stack projects. If you're still using cabal, change
     # to
-    # exec: ../dist/build/braet/braet
+    # exec: ../dist/build/get-zapped/get-zapped
     exec: ../dist/bin/braet
 
     # Command line options passed to your application.
@@ -25,7 +25,7 @@ stanzas:
       # You can specify one or more hostnames for your application to respond
       # to. The primary hostname will be used for generating your application
       # root.
-      - www.braet.com
+      - solvinaja.com
 
     # Enable to force Keter to redirect to https
     # Can be added to any stanza
@@ -34,7 +34,7 @@ stanzas:
   # Static files.
   - type: static-files
     hosts:
-      - static.braet.com
+      - static.solvinaja.com
     root: ../static
 
     # Uncomment to turn on directory listings.
@@ -44,9 +44,9 @@ stanzas:
   - type: redirect
 
     hosts:
-      - braet.com
+      - solvinaja.com
     actions:
-      - host: www.braet.com
+      - host: solvinaja.com
         # secure: false
         # port: 80
 

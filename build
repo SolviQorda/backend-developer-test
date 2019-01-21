@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd braet
+yesod keter
+mv braet.keter ../deploy/binary/
+cd ../deploy/binary
+# Unzip the `braet.keter` file.
+tar -zxvf braet.keter

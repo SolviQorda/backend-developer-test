@@ -2,6 +2,45 @@
 
 An API where players of Chess, Settlers of Catan and Risk can find other players, and host games.
 
+
+## Installation
+
+1. Clone this repository onto your local machine.
+`https://github.com/SolviQorda/backend-developer-test.git`
+
+
+## Configuring Docker on an ec2 instance
+1. On Amazon, start an ec2 instance with Ubuntu 16.
+
+2. Connect to your instance with ssh. Instructions for this can be found on your ec2 dashboard, and should look something like this.
+`ssh -i ~/path/to/your/key.pem ubuntu@ec2-12-34-56-78.compute-1.amazonaws.com`
+
+3. [Install Docker CE](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce)
+
+4. [Install docker-compose](https://docs.docker.com/compose/install/)
+
+
+## Compiling and zipping the executable
+
+1. Back on your local machine, run `./build` in `backend-developer-test`. This will compile an executable, and then move it to the `/deploy` folder.
+
+2. scp `deploy` to your ec2 e.g. `scp -i ~/path/to/your/key.pem -r /backend-developer-test/deploy  ubuntu@ec2-12-34-56-78.compute-1.amazonaws.com:/home/ubuntu`
+where 12-34-56-78 is the IP of your ec2 instance.
+
+3. ssh to your ec2 instance. e.g.
+`ssh -i ~/path/to/your/key.pem ubuntu@ec2-12-34-56-78.compute-1.amazonaws.com`
+
+
+## Deployment
+
+Back inside `/deploy` run `sudo docker-compose -file==prod.yml up -d --build`. You can remove the `-d` flag if you want to troubleshoot at this point. Otherwise docker-compose will now run your docker containers in the background.
+
+
+## Uploading and using tests
+The test frontend is written using Purescript, which compiles to Javascript. To see the test in action you can go to (solvinaja.com:8080). If you want to get the test to run with your own ec2 instance, be aware that you will need a registered domain for Google authentication to work.
+
+
+
 # Technical Choices
 
 I had experience using Yesod to build Haskell webapps, and thought the most efficient route to deliver on the spec would be to use an environment I was familiar with. Yesod provides a web application framework for typesafe routes, and built-in libraries for integration with postgres via Persistent. In practice, converting it to an API came with some complications, principally around the authorisation layer.
