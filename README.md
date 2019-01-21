@@ -37,7 +37,7 @@ Back inside `/deploy` run `sudo docker-compose -file==prod.yml up -d --build`. Y
 
 
 ## Uploading and using tests
-The test frontend is written using Purescript, which compiles to Javascript. To see the test in action you can go to (solvinaja.com:8080). If you want to get the test to run with your own ec2 instance, be aware that you will need a registered domain for Google authentication to work.
+The test frontend is written using Purescript, which compiles to Javascript. To see the test in action you can go to [solvinaja.com:8080](http://solvinaja.com:8080). If you want to get the test to run with your own ec2 instance, be aware that you will need a registered domain for Google authentication to work.
 
 
 
