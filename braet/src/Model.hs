@@ -44,14 +44,14 @@ instance FromJSON InputProfile where
   parseJSON _          = mzero
 
 instance ToJSON UserProfile where
-  toJSON (UserProfile playerId name longitude latitude games age availableToHost) =
+  toJSON (UserProfile q r s t u v w) =
     object
-      [ "name" .= name
-      , "id" .= playerId
+      [ "name" .= r
+      , "id" .= q
       --want to cast this to a Double for sorting
-      , "longitude" .= longitude
-      , "latitude" .= latitude
-      , "games" .= games
-      , "age" .= age
-      , "availableToHost" .= availableToHost
+      , "longitude" .= s
+      , "latitude" .= t
+      , "games" .= u
+      , "age" .= v
+      , "availableToHost" .= w
       ]

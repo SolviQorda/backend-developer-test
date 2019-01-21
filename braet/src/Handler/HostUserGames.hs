@@ -3,7 +3,6 @@
 module Handler.HostUserGames where
 
 import Import
-import Model
 
 putHostGamesR :: Handler Value
 putHostGamesR = do

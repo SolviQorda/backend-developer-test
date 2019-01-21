@@ -4,10 +4,6 @@
 module Handler.RegisterProfile where
 
 import Import
-import qualified Database.Persist.Class as P
-import Data.Aeson
-import Data.Maybe
-import GHC.Generics
 import qualified Data.Foldable as Foldable
 --make a new profile
 postRegisterProfileR :: Handler Value

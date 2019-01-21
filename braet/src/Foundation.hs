@@ -12,12 +12,9 @@ module Foundation where
 
 import Import.NoFoundation
 import Database.Persist.Sql (ConnectionPool, runSqlPool)
-import Data.Aeson
 import qualified Data.ByteString as ByteString
 import Control.Lens
-import Control.Monad.Time
 import Crypto.JWT
-import Text.Hamlet          (hamletFile)
 import Text.Jasmine         (minifym)
 import Control.Monad.Logger (LogSource)
 import Control.Monad.Trans.Except
@@ -25,15 +22,9 @@ import Control.Monad.Trans.Except
 import Network.HTTP.Simple (getResponseBody, httpJSON, parseRequest, setRequestHeaders)
 import qualified Network.Wai as NetworkWai
 
--- Used only when in "auth-dummy-login" setting is enabled.
-import Yesod.Auth.Dummy
-
-import Yesod.Auth.OpenId    (authOpenId, IdentifierType (Claimed))
 import Yesod.Default.Util   (addStaticContentExternal)
-import Yesod.Core.Types     (Logger, AuthResult(..))
+import Yesod.Core.Types     (Logger)
 import qualified Yesod.Core.Unsafe as Unsafe
-import qualified Data.CaseInsensitive as CI
-import qualified Data.Text.Encoding as TE
 
 -- | The foundation datatype for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
